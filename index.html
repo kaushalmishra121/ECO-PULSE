@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoPulse - Real-Time 3D Climate, Weather & CPCB AQI Platform</title>
+  <meta name="description" content="Official academic 3D environmental science dashboard for real-time climate, weather, and Indian CPCB Air Quality Index (AQI) monitoring." />
+
+  <!-- Fonts: Google Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- External CDNs: Three.js, OrbitControls, Chart.js, Supabase -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="app-wrapper">
+
+    <!-- Top Notification Banner: Saved Locality & Disaster Alerts -->
+    <aside id="top-alert-banner" class="top-alert-banner alert-good hidden" aria-live="polite">
+      <div class="alert-content">
+        <div class="alert-icon-box">
+          <svg class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="alert-text-group">
+          <h4>
+            <span id="alert-headline">Saved Locality Alert</span>
+            <span class="alert-badge" id="alert-city-tag">Vasai-Virar</span>
+          </h4>
+          <p id="alert-description">Live atmospheric sensors connected.</p>
+        </div>
+      </div>
+      <button id="close-alert-btn" class="alert-close-btn" aria-label="Dismiss Alert">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </aside>
+
+    <!-- Main Academic Navigation Bar -->
+    <header class="main-header">
+      <div class="brand-section">
+        <div class="brand-logo-badge">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+        <div class="brand-title-wrap">
+          <h1>
+            EcoPulse
+            <span class="academic-tag">ESE Academic Platform</span>
+          </h1>
+          <p>Real-Time 3D Climate, Weather & CPCB AQI Platform</p>
+        </div>
+      </div>
+
+      <!-- Clean flexbox wrapper for Search, GPS, Status Pill, and Auth -->
+      <div class="header-controls-wrapper">
+        <!-- Minimal, compact, and sleek search bar (max-width: 320px; height: 40px) -->
+        <div class="search-box-wrapper">
+          <form id="search-form" class="search-input-group" autocomplete="off">
+            <svg class="search-icon location-pin-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <input 
+              type="text" 
+              id="search-input" 
+              class="search-input" 
+              placeholder="Search city (e.g. Pratapgarh, Norway)..." 
+              autocomplete="off"
+            />
+            <button type="submit" id="search-submit-btn" class="search-submit-btn">Search</button>
+          </form>
+          <!-- Autocomplete Dropdown -->
+          <div id="search-suggestions" class="search-suggestions-dropdown hidden"></div>
+        </div>
+
+        <button id="gps-locate-btn" class="gps-locate-btn" title="Detect GPS coordinates">
+          <svg width="16" height="16" class="gps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 8v8M8 12h8"/>
+          </svg>
+          <span>GPS Auto-Detect</span>
+        </button>
+
+        <!-- Dark/Night Mode Sun/Moon Toggle Button -->
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle Night Mode" title="Toggle Light/Dark Theme">
+          <svg width="18" height="18" class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <svg width="18" height="18" class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+        </button>
+
+        <div class="live-sync-pill" title="Live Open-Meteo & CPCB sensor feeds active">
+          <span class="pulse-dot"></span>
+          <span>Live Sync Active</span>
+        </div>
+
+        <button id="header-auth-btn" class="auth-user-btn" aria-label="Open User Authentication">
+          <svg width="16" height="16" class="auth-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span>Sign In / Profile</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Quick City Shortcuts Bar (Completely separate block to prevent text overlapping) -->
+    <nav class="quick-city-bar" aria-label="Quick Locality Shortcuts">
+      <span class="quick-city-label">Trending Stations:</span>
+      <button class="quick-city-chip" data-city="Vasai-Virar">Vasai-Virar (Local Station)</button>
+      <button class="quick-city-chip" data-city="New Delhi">New Delhi</button>
+      <button class="quick-city-chip" data-city="Mumbai">Mumbai</button>
+      <button class="quick-city-chip" data-city="Bengaluru">Bengaluru</button>
+      <button class="quick-city-chip" data-city="London">London</button>
+      <button class="quick-city-chip" data-city="Tokyo">Tokyo</button>
+      <button class="quick-city-chip" data-city="Norway">Norway</button>
+    </nav>
+
+    <!-- Main Location Title & Live Coordinate Badge -->
+    <section class="location-hero-bar" aria-label="Current Station Details">
+      <div class="location-title-group">
+        <h2 id="current-city-title">Vasai-Virar</h2>
+        <p class="location-subtext" id="current-city-address">Vasai-Virar, Palghar District, Maharashtra, India</p>
+      </div>
+      <div class="coordinates-badge-card">
+        <svg class="coord-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <div>
+          <div class="coord-label">Accurate Coordinates</div>
+          <div class="coord-value" id="current-lat-lon">Lat: 19.3919° N, Lon: 72.8397° E</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Google Clean AQI Layout Architecture (Core Dashboard Grid) -->
+    <main class="dashboard-grid">
+
+      <!-- Left Card: Google Clean AQI Card with Indian CPCB NAQI Spectrum -->
+      <article class="google-aqi-card">
+        <div>
+          <div class="card-eyebrow">
+            <span class="eyebrow-tag">Air Quality Index</span>
+            <span class="standard-badge">Indian CPCB NAQI Standard</span>
+          </div>
+
+          <div class="aqi-hero-display">
+            <span class="aqi-number" id="aqi-number">68</span>
+            <span class="aqi-category-badge" id="aqi-category-badge">Satisfactory</span>
+          </div>
+          <p class="aqi-scale-summary" id="dominant-pollutant-text">Dominant Pollutant: PM2.5 (Calculated via Indian CPCB Formula)</p>
+
+          <!-- Official CPCB 6-Band Scale Bar with Marker Pointer -->
+          <div class="cpcb-scale-track">
+            <div class="cpcb-marker" id="aqi-scale-marker" style="left: 13.6%;"></div>
+          </div>
+          <div class="scale-ticks-labels">
+            <span>0 Good</span>
+            <span>50 Sat</span>
+            <span>100 Mod</span>
+            <span>200 Poor</span>
+            <span>300 V.Poor</span>
+            <span>400+ Severe</span>
+          </div>
+        </div>
+
+        <!-- Google-Style Health Guidance Box -->
+        <div class="health-guidance-box">
+          <div class="health-guide-icon">🛡️</div>
+          <div class="health-guide-content">
+            <h4>Health & Outdoor Recommendations</h4>
+            <p id="health-advice-text">Minor breathing discomfort to sensitive people. Clean and acceptable air quality for most individuals.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Right Card: Microclimate & Live Meteorological Card -->
+      <article class="weather-hero-card">
+        <div>
+          <div class="card-eyebrow">
+            <span class="eyebrow-tag">Meteorological Conditions</span>
+            <span class="standard-badge">Open-Meteo High-Res</span>
+          </div>
+
+          <div class="weather-header-row">
+            <div class="weather-temp-wrap">
+              <svg class="weather-icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+              <div class="weather-temp-main" id="weather-temp-val">30°C</div>
+            </div>
+            <div class="weather-desc-wrap text-right">
+              <h3 id="weather-condition-val">Partly Cloudy</h3>
+              <p id="weather-feels-val">Feels like 33°C</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="microclimate-grid">
+          <div class="micro-card">
+            <svg class="w-5 h-5 micro-icon mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707" />
+            </svg>
+            <div class="micro-label">Humidity</div>
+            <div class="micro-val" id="micro-humidity">64%</div>
+          </div>
+          <div class="micro-card">
+            <svg class="w-5 h-5 micro-icon mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+            <div class="micro-label">Wind Speed</div>
+            <div class="micro-val" id="micro-wind">9.2 km/h</div>
+          </div>
+          <div class="micro-card">
+            <svg class="w-5 h-5 micro-icon mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3" />
+            </svg>
+            <div class="micro-label">Pressure</div>
+            <div class="micro-val" id="micro-pressure">1013 hPa</div>
+          </div>
+          <div class="micro-card">
+            <svg class="w-5 h-5 micro-icon mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+            <div class="micro-label">Rainfall</div>
+            <div class="micro-val" id="micro-precip">0.0 mm</div>
+          </div>
+          <div class="micro-card">
+            <svg class="w-5 h-5 micro-icon mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1" />
+            </svg>
+            <div class="micro-label">UV Index</div>
+            <div class="micro-val" id="micro-uv">Moderate 5</div>
+          </div>
+          <div class="micro-card">
+            <svg class="w-5 h-5 micro-icon mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
+            </svg>
+            <div class="micro-label">Atmosphere</div>
+            <div class="micro-val" id="micro-vis">Stable</div>
+          </div>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- Indian CPCB Standard Pollutant Matrix Grid -->
+    <section class="pollutants-section" aria-label="CPCB Pollutant Concentrations">
+      <div class="section-title-wrap">
+        <h3 class="section-title">
+          <svg class="w-5 h-5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          CPCB Core Air Pollutants Matrix
+        </h3>
+        <span class="text-xs text-slate-500 font-semibold">Sub-indices calculated per Central Pollution Control Board Guidelines</span>
+      </div>
+
+      <div class="pollutants-grid" id="pollutants-grid-container">
+        <!-- Injected dynamically via app.js -->
+      </div>
+    </section>
+
+    <!-- 24-Hour Trend Forecast Chart (Chart.js) -->
+    <section class="chart-container-card" aria-label="Hourly Air Quality Trend">
+      <div class="chart-header">
+        <div class="flex items-center gap-2">
+          <h3 class="font-bold text-slate-800 text-sm tracking-tight">24-Hour Particulate Matter Forecast (PM2.5 & PM10)</h3>
+          <span class="academic-tag">Diurnal Cycle</span>
+        </div>
+        <span class="text-xs text-slate-500 font-medium">Hourly Open-Meteo Atmospheric Chemistry Model</span>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="aqi-trend-chart"></canvas>
+      </div>
+    </section>
+
+    <!-- Three.js 3D WebGL Canvas Section with Environmental Switchers -->
+    <section class="three-viewport-section" aria-label="3D Environmental Simulation Viewport">
+      <div class="three-card">
+        <div class="three-toolbar">
+          <div class="three-title-group">
+            <h3>
+              <svg class="w-5 h-5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+              </svg>
+              EcoPulse 3D Interactive Urban Atmosphere
+            </h3>
+            <p>Procedural city with concrete facades, wireframe outlines, roadside trees, and dynamic climate shaders</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="three-mode-switchers" role="tablist">
+              <button class="three-mode-btn active" data-mode="aqi" role="tab" title="View live CPCB smog & particle haze">
+                🌫️ AQI Smog View
+              </button>
+              <button class="three-mode-btn" data-mode="rain" role="tab" title="Simulate 3D rain particles & wet reflections">
+                🌧️ Rain Simulation
+              </button>
+              <button class="three-mode-btn" data-mode="sun" role="tab" title="Simulate warm solar flare & heatwave glare">
+                ☀️ High Temp Sun
+              </button>
+            </div>
+
+            <button id="reset-camera-btn" class="three-reset-cam-btn" title="Reset Orbit Camera">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset View
+            </button>
+          </div>
+        </div>
+
+        <!-- WebGL Canvas Container -->
+        <div id="three-canvas-container" class="three-canvas-container">
+          <div class="three-hud-overlay">
+            <span>Station: <strong id="hud-city-name" class="hud-pill">Vasai-Virar</strong></span>
+            <span>•</span>
+            <span>Simulation: <strong id="hud-mode-text" class="hud-pill">CPCB Pollution Fog Simulation</strong></span>
+            <span>•</span>
+            <span>Controls: <strong>Left Click Rotate | Right Click Pan | Scroll Zoom (5m - 300m)</strong></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Academic Footer -->
+    <footer class="academic-footer">
+      <p class="footer-main-text">Department of Environmental Engineering | Official Real-Time Indian CPCB Standard Air Quality & Meteorological Platform</p>
+      <p class="footer-sub-text">Developed for Academic Environmental Science (ESE) Research • Dynamic OpenStreetMap Nominatim Geocoding • Open-Meteo Air Quality Modeling</p>
+    </footer>
+
+  </div>
+
+  <!-- "VAYU" - Smart AI Emergency & Disaster Chatbot Mount -->
+  <div id="vayu-bot-root"></div>
+
+  <!-- Authentication & User Profile Modal (Google Sign-In & Email/Password with Supabase Schema) -->
+  <div id="auth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="auth-modal-card">
+      <button id="modal-close-btn" class="modal-close-btn" aria-label="Close Modal">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Auth Form View (When logged out) -->
+      <div id="auth-form-view">
+        <div class="auth-modal-header">
+          <h3 id="auth-modal-title">Researcher Access & Alerts</h3>
+          <p>Sign in to save favorite stations and receive customized CPCB alerts.</p>
+        </div>
+
+        <button type="button" id="google-signin-btn" class="google-oauth-btn">
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+          </svg>
+          Sign in with Google
+        </button>
+
+        <div class="auth-divider">
+          <span>or email credentials</span>
+        </div>
+
+        <form id="email-auth-form" class="auth-form" autocomplete="off">
+          <div class="form-group">
+            <label class="form-label" for="auth-name">Full Name</label>
+            <input type="text" id="auth-name" class="form-input" placeholder="Enter your name" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="auth-email">Academic / Corporate Email</label>
+            <input type="email" id="auth-email" class="form-input" placeholder="name@gmail.com" autocomplete="off" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="auth-password">Password</label>
+            <input type="password" id="auth-password" class="form-input" placeholder="Enter password" autocomplete="off" required />
+          </div>
+          <div id="auth-error-msg" class="form-error-msg"></div>
+          <button type="submit" class="auth-submit-btn">Login / Register Session</button>
+        </form>
+      </div>
+
+      <!-- Profile View (When logged in) -->
+      <div id="profile-view" class="profile-view-wrap hidden">
+        <div class="profile-avatar-big" id="profile-avatar-initial">K</div>
+        <h3 id="profile-full-name" class="font-bold text-slate-800 text-lg">Kushal Mishra</h3>
+        <p id="profile-email" class="profile-email-badge">kushal@domain.com</p>
+
+        <div class="favorite-city-selector-box">
+          <div class="fav-city-header">
+            <span>Primary Alert Station:</span>
+          </div>
+          <div class="fav-city-btn-row">
+            <input type="text" id="profile-fav-city-input" class="fav-city-input" placeholder="e.g. Vasai" />
+            <button type="button" id="profile-fav-city-save" class="fav-city-save-btn">Save Station</button>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">The top notification banner proactively tracks climate alerts for this station on login.</p>
+        </div>
+
+        <button type="button" id="logout-btn" class="logout-btn">Log Out Session</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Universal Application Scripts (Direct execution & zero CORS restrictions) -->
+  <script src="cpcb-calc.js"></script>
+  <script src="three-scene.js"></script>
+  <script src="auth-db.js"></script>
+  <script src="vayu-bot.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
