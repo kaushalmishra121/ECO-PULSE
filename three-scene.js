@@ -173,8 +173,9 @@
     buildCity() {
       // Ground plane
       const groundGeo = new THREE.PlaneGeometry(160, 160);
+      const groundColor = this.config?.groundColor ?? 0xf8fafc;
       this.groundMat = new THREE.MeshStandardMaterial({
-        color: 0xf8fafc,
+        color: groundColor ?? 0xf8fafc,
         roughness: 0.5,
         metalness: 0.1
       });
@@ -185,8 +186,9 @@
 
       // Plaza Base
       const plazaGeo = new THREE.BoxGeometry(110, 0.4, 110);
+      const plazaColor = this.config?.plazaColor ?? 0xe2e8f0;
       const plazaMat = new THREE.MeshStandardMaterial({
-        color: 0xe2e8f0,
+        color: plazaColor ?? 0xe2e8f0,
         roughness: 0.6,
         metalness: 0.1
       });
@@ -196,8 +198,9 @@
       this.scene.add(plaza);
 
       // Cross Avenues
+      const roadColor = this.config?.roadColor ?? 0x475569;
       const roadMat = new THREE.MeshStandardMaterial({
-        color: 0x475569,
+        color: roadColor ?? 0x475569,
         roughness: 0.6,
         metalness: 0.2,
         map: this.roadTexture
@@ -220,7 +223,8 @@
 
       // Procedural Buildings
       const buildingGroup = new THREE.Group();
-      const wireframeMat = new THREE.LineBasicMaterial({ color: 0x64748b, linewidth: 1.5 });
+      const wireColor = this.config?.wireframeColor ?? 0x64748b;
+      const wireframeMat = new THREE.LineBasicMaterial({ color: wireColor ?? 0x64748b, linewidth: 1.5 });
 
       const blocks = [
         { xRange: [-42, -12], zRange: [-42, -12] },
@@ -239,8 +243,12 @@
             const depth = 6.5 + Math.random() * 2;
 
             const boxGeo = new THREE.BoxGeometry(width, height, depth);
+            // Safe non-negative index lookup to guarantee color is never undefined
+            const colorIdx = Math.abs(Math.floor(x + z + bIdx)) % bColors.length;
+            const blockColor = bColors[colorIdx] ?? 0xf1f5f9;
+
             const boxMat = new THREE.MeshStandardMaterial({
-              color: bColors[(x + z + bIdx) % bColors.length],
+              color: blockColor ?? 0xffffff,
               map: this.buildingTexture,
               bumpMap: this.buildingBump,
               bumpScale: 0.05,
@@ -262,9 +270,10 @@
 
             // Rooftop components
             if (Math.random() > 0.4) {
+              const roofColor = this.config?.roofColor ?? 0x94a3b8;
               const roofBox = new THREE.Mesh(
                 new THREE.BoxGeometry(2, 1.2, 2),
-                new THREE.MeshStandardMaterial({ color: 0x94a3b8 })
+                new THREE.MeshStandardMaterial({ color: roofColor ?? 0x94a3b8 })
               );
               roofBox.position.set(x, height + 0.8, z);
               roofBox.castShadow = true;
@@ -276,27 +285,32 @@
 
       // Environmental Landmark Spire
       const spireBaseGeo = new THREE.CylinderGeometry(4.5, 6, 32, 16);
-      const spireMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6, roughness: 0.2 });
+      const spireColor = this.config?.spireColor ?? 0xffffff;
+      const spireMat = new THREE.MeshStandardMaterial({ color: spireColor ?? 0xffffff, metalness: 0.6, roughness: 0.2 });
       const tower = new THREE.Mesh(spireBaseGeo, spireMat);
       tower.position.set(0, 16, 0);
       tower.castShadow = true;
       buildingGroup.add(tower);
 
       const spireEdges = new THREE.EdgesGeometry(spireBaseGeo);
-      const spireWire = new THREE.LineSegments(spireEdges, new THREE.LineBasicMaterial({ color: 0x0284c7 }));
+      const spireWireColor = this.config?.spireWireColor ?? 0x0284c7;
+      const spireWire = new THREE.LineSegments(spireEdges, new THREE.LineBasicMaterial({ color: spireWireColor ?? 0x0284c7 }));
       spireWire.position.copy(tower.position);
       buildingGroup.add(spireWire);
 
       const needleGeo = new THREE.CylinderGeometry(0.2, 0.8, 14, 8);
-      const needleMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, emissive: 0x0284c7, emissiveIntensity: 0.3 });
+      const needleColor = this.config?.needleColor ?? 0x0ea5e9;
+      const needleEmissive = this.config?.needleEmissive ?? 0x0284c7;
+      const needleMat = new THREE.MeshStandardMaterial({ color: needleColor ?? 0x0ea5e9, emissive: needleEmissive ?? 0x0284c7, emissiveIntensity: 0.3 });
       const needle = new THREE.Mesh(needleGeo, needleMat);
       needle.position.set(0, 39, 0);
       buildingGroup.add(needle);
 
       const sensorGlobeGeo = new THREE.SphereGeometry(1.6, 24, 24);
+      const globeColor = this.aqiColor ?? (this.config?.sensorGlobeColor ?? 0x92d050);
       this.sensorGlobeMat = new THREE.MeshStandardMaterial({
-        color: 0x92d050,
-        emissive: 0x92d050,
+        color: globeColor ?? 0x92d050,
+        emissive: globeColor ?? 0x92d050,
         emissiveIntensity: 0.8,
         roughness: 0.1
       });
@@ -312,9 +326,12 @@
 
     plantTrees() {
       const treeGroup = new THREE.Group();
-      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
-      const foliageMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.5, metalness: 0.1 });
-      const altFoliageMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.5, metalness: 0.1 });
+      const trunkColor = this.config?.trunkColor ?? 0x78350f;
+      const foliageColor = this.config?.foliageColor ?? 0x16a34a;
+      const altFoliageColor = this.config?.altFoliageColor ?? 0x22c55e;
+      const trunkMat = new THREE.MeshStandardMaterial({ color: trunkColor ?? 0x78350f, roughness: 0.9 });
+      const foliageMat = new THREE.MeshStandardMaterial({ color: foliageColor ?? 0x16a34a, roughness: 0.5, metalness: 0.1 });
+      const altFoliageMat = new THREE.MeshStandardMaterial({ color: altFoliageColor ?? 0x22c55e, roughness: 0.5, metalness: 0.1 });
 
       const treePositions = [];
 
@@ -357,8 +374,15 @@
     }
 
     createCityVehicles() {
-      const carMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.7 });
-      const evMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.3, metalness: 0.7 });
+      const carColor = this.config?.carColor ?? 0x0284c7;
+      const evColor = this.config?.evColor ?? 0x10b981;
+      const cabinColor = this.config?.cabinColor ?? 0x0f172a;
+      const wheelColor = this.config?.wheelColor ?? 0x1e293b;
+
+      const carMat = new THREE.MeshStandardMaterial({ color: carColor ?? 0x0284c7, roughness: 0.3, metalness: 0.7 });
+      const evMat = new THREE.MeshStandardMaterial({ color: evColor ?? 0x10b981, roughness: 0.3, metalness: 0.7 });
+      const cabinMat = new THREE.MeshStandardMaterial({ color: cabinColor ?? 0x0f172a, roughness: 0.1 });
+      const wheelMat = new THREE.MeshStandardMaterial({ color: wheelColor ?? 0x1e293b });
 
       for (let i = 0; i < 4; i++) {
         const carGroup = new THREE.Group();
@@ -367,11 +391,10 @@
         body.castShadow = true;
         carGroup.add(body);
 
-        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.7, 1.8), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 }));
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.7, 1.8), cabinMat);
         cabin.position.set(0, 1.1, -0.2);
         carGroup.add(cabin);
 
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
         [-0.9, 0.9].forEach(wx => {
           [-1.1, 1.1].forEach(wz => {
             const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.25, 8), wheelMat);
@@ -408,8 +431,9 @@
       }
       rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
 
+      const rainColor = this.config?.rainColor ?? 0x38bdf8;
       const rainMat = new THREE.PointsMaterial({
-        color: 0x38bdf8,
+        color: rainColor ?? 0x38bdf8,
         size: 0.45,
         transparent: true,
         opacity: 0.75,
@@ -429,8 +453,10 @@
         hazePositions[i + 2] = (Math.random() - 0.5) * 100;
       }
       hazeGeo.setAttribute('position', new THREE.BufferAttribute(hazePositions, 3));
+
+      const hazeColor = this.aqiColor ?? (this.config?.hazeColor ?? '#92d050');
       this.hazeMat = new THREE.PointsMaterial({
-        color: new THREE.Color(this.aqiColor),
+        color: new THREE.Color(hazeColor ?? 0x92d050),
         size: 1.8,
         transparent: true,
         opacity: 0.35,
@@ -441,15 +467,17 @@
 
       // 3. Sun Mesh
       const sunGeo = new THREE.SphereGeometry(4.5, 32, 32);
-      const sunMat = new THREE.MeshBasicMaterial({ color: 0xffedd5, transparent: true, opacity: 0.95 });
+      const sunColor = this.config?.sunColor ?? 0xffedd5;
+      const sunMat = new THREE.MeshBasicMaterial({ color: sunColor ?? 0xffedd5, transparent: true, opacity: 0.95 });
       this.sunMesh = new THREE.Mesh(sunGeo, sunMat);
       this.sunMesh.position.set(45, 65, 35);
       this.sunMesh.visible = false;
       this.scene.add(this.sunMesh);
 
       const flareGeo = new THREE.RingGeometry(5, 12, 32);
+      const flareColor = this.config?.flareColor ?? 0xfbbf24;
       const flareMat = new THREE.MeshBasicMaterial({
-        color: 0xfbbf24,
+        color: flareColor ?? 0xfbbf24,
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 0.35
@@ -504,12 +532,13 @@
     }
 
     updateAQI(aqiValue, colorHex) {
-      this.aqiValue = aqiValue;
-      this.aqiColor = colorHex;
+      this.aqiValue = (aqiValue !== undefined && aqiValue !== null) ? aqiValue : 68;
+      const safeColor = colorHex ?? this.aqiColor ?? '#92d050';
+      this.aqiColor = safeColor;
 
       if (this.sensorGlobeMat) {
-        this.sensorGlobeMat.color.set(colorHex);
-        this.sensorGlobeMat.emissive.set(colorHex);
+        if (this.sensorGlobeMat.color) this.sensorGlobeMat.color.set(safeColor);
+        if (this.sensorGlobeMat.emissive) this.sensorGlobeMat.emissive.set(safeColor);
       }
 
       if (this.currentMode === 'aqi') {
@@ -552,8 +581,9 @@
         particleSize = 3.0;
       }
 
-      if (this.hazeMat) {
-        this.hazeMat.color.set(this.aqiColor);
+      if (this.hazeMat && this.hazeMat.color) {
+        const safeColor = this.aqiColor ?? '#92d050';
+        this.hazeMat.color.set(safeColor);
         this.hazeMat.opacity = particleOpacity;
         this.hazeMat.size = particleSize;
       }

@@ -12,9 +12,9 @@
   --border-strong: #cbd5e1;
   
   --text-main: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --text-subtle: #94a3b8;
+  --text-secondary: #0f172a;
+  --text-muted: #1e293b;
+  --text-subtle: #334155;
 
   --primary: #0284c7;
   --primary-hover: #0369a1;
@@ -51,11 +51,12 @@ body.dark-mode {
   --border-strong: #475569;
   
   --text-main: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-subtle: #64748b;
+  --text-secondary: #f8fafc;
+  --text-muted: #e2e8f0;
+  --text-subtle: #cbd5e1;
 
   --primary-light: rgba(2, 132, 199, 0.2);
+  color: #f8fafc !important;
 }
 
 body.dark-mode::before {
@@ -92,7 +93,42 @@ body.dark-mode .search-input {
 }
 
 body.dark-mode .search-input::placeholder {
-  color: #64748b !important;
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode .search-icon,
+body.dark-mode .location-pin-icon,
+body.dark-mode .search-input-group svg {
+  color: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
+
+body.dark-mode .brand-title-wrap h1,
+body.dark-mode #alert-headline,
+body.dark-mode .alert-text-group h4,
+body.dark-mode .alert-text-group p,
+body.dark-mode #alert-description,
+body.dark-mode .brand-title-wrap p,
+body.dark-mode .location-subtext,
+body.dark-mode .subtitle-text,
+body.dark-mode .weather-desc-wrap p,
+body.dark-mode .three-title-group p,
+body.dark-mode .footer-sub-text,
+body.dark-mode .footer-main-text,
+body.dark-mode .chart-header span,
+body.dark-mode .section-title-wrap span,
+body.dark-mode .suggestion-text-sub,
+body.dark-mode .coord-label,
+body.dark-mode .quick-city-label,
+body.dark-mode .eyebrow-tag,
+body.dark-mode .micro-label,
+body.dark-mode .aqi-scale-summary,
+body.dark-mode .scale-ticks-labels,
+body.dark-mode .pollutant-unit,
+body.dark-mode .text-slate-500,
+body.dark-mode .text-slate-400,
+body.dark-mode .text-slate-800 {
+  color: #f8fafc !important;
 }
 
 body.dark-mode .suggestion-item {
@@ -191,7 +227,7 @@ svg {
 body {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-canvas);
-  color: var(--text-main);
+  color: #0f172a;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -302,10 +338,11 @@ body.dark-mode .alert-icon-box {
   background: #334155;
 }
 
-.alert-text-group h4 {
+.alert-text-group h4,
+#alert-headline {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: #0f172a;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -325,9 +362,10 @@ body.dark-mode .alert-badge {
   color: #cbd5e1;
 }
 
-.alert-text-group p {
+.alert-text-group p,
+#alert-description {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: #0f172a;
   margin-top: 2px;
 }
 
@@ -383,7 +421,7 @@ body.dark-mode .alert-badge {
 .brand-title-wrap h1 {
   font-size: 1.35rem;
   font-weight: 800;
-  color: var(--text-main);
+  color: #0f172a;
   letter-spacing: -0.02em;
   display: flex;
   align-items: center;
@@ -396,14 +434,14 @@ body.dark-mode .alert-badge {
   border-radius: 6px;
   background: var(--bg-card-subtle);
   border: 1px solid var(--border-strong);
-  color: var(--text-secondary);
+  color: #0f172a;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .brand-title-wrap p {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: #0f172a;
   font-weight: 500;
 }
 
@@ -447,12 +485,14 @@ body.dark-mode .alert-badge {
 
 /* Fixed sizing for search location icon to prevent giant SVG blowout */
 .search-icon,
-.location-pin-icon {
+.location-pin-icon,
+.search-input-group svg {
   width: 18px !important;
   height: 18px !important;
   min-width: 18px !important;
   max-width: 18px !important;
-  color: var(--text-muted);
+  color: #0f172a !important;
+  stroke: #0f172a !important;
   flex-shrink: 0;
   margin-right: 8px;
 }
@@ -463,15 +503,15 @@ body.dark-mode .alert-badge {
   background: transparent;
   font-size: 0.85rem;
   font-family: inherit;
-  font-weight: 500;
-  color: var(--text-main);
+  font-weight: 600;
+  color: #0f172a;
   outline: none;
   min-width: 0;
   padding: 0;
 }
 
 .search-input::placeholder {
-  color: var(--text-subtle);
+  color: #334155;
   font-size: 0.82rem;
 }
 
@@ -719,7 +759,7 @@ body.dark-mode .theme-icon-moon {
 .quick-city-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #0f172a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
@@ -775,7 +815,7 @@ body.dark-mode .theme-icon-moon {
 
 .location-subtext {
   font-size: 0.88rem;
-  color: var(--text-secondary);
+  color: #0f172a;
   margin-top: 2px;
 }
 
@@ -802,7 +842,7 @@ body.dark-mode .theme-icon-moon {
 .coord-label {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #0f172a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -851,7 +891,7 @@ body.dark-mode .theme-icon-moon {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-muted);
+  color: #0f172a;
 }
 
 .standard-badge {
@@ -897,7 +937,7 @@ body.dark-mode .theme-icon-moon {
 
 .aqi-scale-summary {
   font-size: 0.88rem;
-  color: var(--text-secondary);
+  color: #0f172a;
   margin-bottom: 20px;
 }
 
@@ -943,7 +983,7 @@ body.dark-mode .theme-icon-moon {
   justify-content: space-between;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #0f172a;
   margin-bottom: 24px;
 }
 
@@ -972,7 +1012,7 @@ body.dark-mode .theme-icon-moon {
 
 .health-guide-content p {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: #0f172a;
   line-height: 1.45;
 }
 
@@ -1028,7 +1068,7 @@ body.dark-mode .theme-icon-moon {
 
 .weather-desc-wrap p {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #0f172a;
 }
 
 .microclimate-grid {
@@ -1057,7 +1097,7 @@ body.dark-mode .theme-icon-moon {
 .micro-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #0f172a;
   text-transform: uppercase;
 }
 
@@ -1147,7 +1187,7 @@ body.dark-mode .theme-icon-moon {
 
 .pollutant-unit {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: #0f172a;
   font-weight: 500;
 }
 
@@ -1234,7 +1274,7 @@ body.dark-mode .theme-icon-moon {
 
 .three-title-group p {
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: #0f172a;
 }
 
 .three-mode-switchers {
@@ -1913,13 +1953,21 @@ body.dark-mode .vayu-verified-pill {
 .footer-main-text {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: #0f172a;
   margin-bottom: 6px;
 }
 
 .footer-sub-text {
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: #0f172a;
+}
+
+/* High-contrast subtitle & label helpers */
+.subtitle-text,
+.text-slate-500,
+.text-slate-400,
+.text-slate-800 {
+  color: #0f172a;
 }
 
 /* --------------------------------------------------------------------------
