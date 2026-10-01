@@ -10,13 +10,14 @@
 })(typeof self !== 'undefined' ? self : this, function () {
 
   class EcoPulseScene {
-    constructor(canvasContainerId) {
+    constructor(canvasContainerId, config = {}) {
       this.container = document.getElementById(canvasContainerId);
       if (!this.container) return;
 
-      this.currentMode = 'aqi'; // 'aqi' | 'rain' | 'sun'
-      this.aqiValue = 68;
-      this.aqiColor = '#92d050';
+      this.config = config || {};
+      this.currentMode = this.config.mode || 'aqi'; // 'aqi' | 'rain' | 'sun'
+      this.aqiValue = (this.config.aqiValue !== undefined && this.config.aqiValue !== null) ? this.config.aqiValue : 68;
+      this.aqiColor = this.config.aqiColor || '#92d050';
       this.isRaining = false;
       this.rainParticles = null;
       this.smogParticles = null;
