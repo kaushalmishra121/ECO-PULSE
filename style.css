@@ -66,6 +66,7 @@ body.dark-mode::before {
 body.dark-mode .coordinates-badge-card,
 body.dark-mode .micro-card,
 body.dark-mode .gps-locate-btn,
+body.dark-mode .add-location-btn,
 body.dark-mode .quick-city-chip,
 body.dark-mode .three-toolbar,
 body.dark-mode .three-reset-cam-btn,
@@ -386,16 +387,20 @@ body.dark-mode .alert-badge {
 
 /* --------------------------------------------------------------------------
    Header & Navigation
+   Parent navbar container: display: flex, align-items: center,
+   justify-content: space-between, flex-wrap: nowrap, position: relative
    -------------------------------------------------------------------------- */
 .main-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
   padding: 16px 0;
   border-bottom: 1px solid var(--border-glass);
   margin-bottom: 16px;
   gap: 16px;
-  flex-wrap: wrap;
+  z-index: 100;
 }
 
 .brand-section {
@@ -445,12 +450,88 @@ body.dark-mode .alert-badge {
   font-weight: 500;
 }
 
-/* Header Controls Wrapper (Search, GPS, Theme Toggle, Live Sync, Auth Button) */
+/* Header Controls Wrapper (Search, Add Loc, GPS, Theme Toggle, Live Sync, Auth Button) */
 .header-controls-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  z-index: 101;
+}
+
+/* Location Add / Saved Plus (+) Button Styling
+   Size: width 36px, height 36px, font-size 1.2rem, position relative/static (no absolute overflow),
+   neatly aligned inline with search input and GPS button group */
+.add-location-btn,
+.location-add-btn,
+.btn-add-location,
+.plus-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  font-size: 1.2rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 12px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 10;
+}
+
+.add-location-btn:hover,
+.location-add-btn:hover,
+.btn-add-location:hover,
+.plus-btn:hover {
+  background: var(--bg-card-subtle);
+  border-color: var(--border-strong);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.add-location-btn svg,
+.location-add-btn svg,
+.btn-add-location svg,
+.plus-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  stroke-width: 2.2 !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Ensure no navbar SVG or icon ever bleeds or overflows outside header boundaries */
+.main-header svg,
+.header-controls-wrapper svg,
+.search-input-group svg,
+.gps-locate-btn svg,
+.theme-toggle-btn svg,
+.auth-user-btn svg {
+  max-width: 20px !important;
+  max-height: 20px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
 }
 
 /* --------------------------------------------------------------------------

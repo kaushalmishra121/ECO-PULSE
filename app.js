@@ -182,6 +182,17 @@
         }
       });
 
+      const addLocBtn = document.getElementById('add-location-btn');
+      if (addLocBtn) {
+        addLocBtn.addEventListener('click', () => {
+          this.saveLocality(this.currentCity);
+          if (this.authManager) {
+            this.authManager.updateFavoriteCity(this.currentCity.name);
+          }
+          alert(`Locality "${this.currentCity.name}" saved to your preferred localities!`);
+        });
+      }
+
       const gpsBtn = document.getElementById('gps-locate-btn');
       gpsBtn.addEventListener('click', () => this.locateUserGPS());
 
@@ -337,20 +348,20 @@
             await this.fetchCityData(latitude, longitude, 'My Location', `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`);
           } finally {
             gpsBtn.innerHTML = `
-              <svg class="w-4 h-4 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="16" height="16" class="gps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 8v8M8 12h8"/>
               </svg>
-              GPS Auto-Detect
+              <span>GPS Auto-Detect</span>
             `;
           }
         },
         (err) => {
           alert('Unable to retrieve GPS coordinates: ' + err.message);
           gpsBtn.innerHTML = `
-            <svg class="w-4 h-4 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" class="gps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 8v8M8 12h8"/>
             </svg>
-            GPS Auto-Detect
+            <span>GPS Auto-Detect</span>
           `;
         }
       );
