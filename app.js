@@ -7,20 +7,66 @@
   const AuthDatabaseManager = window.AuthDatabaseManager;
   const VayuChatbot = window.VayuChatbot;
 
+  const DEFAULT_LOCALITY = {
+    name: 'Vasai-Virar',
+    displayName: 'Vasai-Virar, Palghar District, Maharashtra, India',
+    lat: 19.3919,
+    lon: 72.8397
+  };
+  const STORAGE_KEY = 'ecopulse_saved_locality';
+
   class EcoPulseApp {
     constructor() {
-      this.currentCity = {
-        name: 'Vasai-Virar',
-        displayName: 'Vasai-Virar, Palghar District, Maharashtra, India',
-        lat: 19.3919,
-        lon: 72.8397
-      };
+      // Bug 3: Load saved locality from localStorage with fallback check
+      this.currentCity = this.getSavedLocality() || { ...DEFAULT_LOCALITY };
 
       this.liveAQIData = null;
       this.liveWeatherData = null;
       this.historyChart = null;
 
       this.init();
+    }
+
+    getSavedLocality() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.lat === 'number' && typeof parsed.lon === 'number' && !isNaN(parsed.lat) && !isNaN(parsed.lon)) {
+          return {
+            name: parsed.name || DEFAULT_LOCALITY.name,
+            displayName: parsed.displayName || parsed.name || DEFAULT_LOCALITY.displayName,
+            lat: parsed.lat,
+            lon: parsed.lon
+          };
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    }
+
+    saveLocality(loc) {
+      try {
+        if (!loc || typeof loc.lat !== 'number' || typeof loc.lon !== 'number' || isNaN(loc.lat) || isNaN(loc.lon)) {
+          return;
+        }
+        const data = {
+          name: loc.name || DEFAULT_LOCALITY.name,
+          displayName: loc.displayName || loc.name || DEFAULT_LOCALITY.displayName,
+          lat: loc.lat,
+          lon: loc.lon
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        this.currentCity = data;
+      } catch (e) {
+        console.warn('Could not save locality to localStorage:', e);
+      }
+    }
+
+    resetToDefaultLocality() {
+      this.saveLocality(DEFAULT_LOCALITY);
+      return { ...DEFAULT_LOCALITY };
     }
 
     async init() {
@@ -51,8 +97,35 @@
       // 4. Setup UI Listeners
       this.setupEventListeners();
 
-      // 5. Fetch initial data for default locality
-      await this.fetchCityData(this.currentCity.lat, this.currentCity.lon, this.currentCity.name, this.currentCity.displayName);
+      // 5. Fetch initial data for saved locality with robust fallback check
+      try {
+        const success = await this.fetchCityData(
+          this.currentCity.lat,
+          this.currentCity.lon,
+          this.currentCity.name,
+          this.currentCity.displayName
+        );
+
+        if (!success && this.currentCity.name !== DEFAULT_LOCALITY.name) {
+          console.warn('Saved locality failed to load. Resetting cleanly to default locality.');
+          this.resetToDefaultLocality();
+          await this.fetchCityData(
+            DEFAULT_LOCALITY.lat,
+            DEFAULT_LOCALITY.lon,
+            DEFAULT_LOCALITY.name,
+            DEFAULT_LOCALITY.displayName
+          );
+        }
+      } catch (err) {
+        console.warn('Initial city fetch encountered error. Falling back to default locality:', err);
+        this.resetToDefaultLocality();
+        await this.fetchCityData(
+          DEFAULT_LOCALITY.lat,
+          DEFAULT_LOCALITY.lon,
+          DEFAULT_LOCALITY.name,
+          DEFAULT_LOCALITY.displayName
+        );
+      }
     }
 
     setupEventListeners() {
@@ -147,15 +220,26 @@
       else if (mode === 'sun') el.textContent = 'Solar Ray & High Temp Glare';
     }
 
+    // Bug 2: City Search Geocoding Fix for suburban areas (Goregaon, Borivali, Andheri, Kalyan, etc.)
     async geocodeAndSearch(query) {
       this.setSearchLoading(true);
       try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=1`;
-        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-        const data = await res.json();
+        const trimmed = query.trim();
+        // Query format: format=json&q={input}, India&addressdetails=1
+        const formattedQuery = trimmed.toLowerCase().includes('india') ? trimmed : `${trimmed}, India`;
+        let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formattedQuery)}&addressdetails=1&limit=5`;
+        let res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        let data = await res.json();
+
+        // Fallback for global queries if India-targeted query has no matches
+        if (!data || data.length === 0) {
+          url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}&addressdetails=1&limit=5`;
+          res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+          data = await res.json();
+        }
 
         if (!data || data.length === 0) {
-          alert(`Location "${query}" could not be found. Please try another city or country.`);
+          alert(`Location "${query}" could not be found. Please try another city or area.`);
           this.setSearchLoading(false);
           return;
         }
@@ -165,7 +249,8 @@
         const lon = parseFloat(item.lon);
 
         const addr = item.address || {};
-        const cityName = addr.city || addr.town || addr.municipality || addr.district || addr.state || addr.country || query;
+        // Prioritize local suburban / neighbourhood naming (e.g. Goregaon, Borivali)
+        const cityName = addr.suburb || addr.neighbourhood || addr.city_district || addr.residential || item.name || addr.city || addr.town || addr.municipality || addr.district || query;
         const displayName = item.display_name;
 
         await this.fetchCityData(lat, lon, cityName, displayName);
@@ -177,11 +262,13 @@
       }
     }
 
-    // Real-Time Autocomplete with matching options (e.g. Pratapgarh, UP vs Pratapgarh, Rajasthan)
+    // Real-Time Autocomplete with formatted query format=json&q={input}, India&addressdetails=1
     async fetchSearchSuggestions(query) {
       const suggestionsBox = document.getElementById('search-suggestions');
       try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=6`;
+        const trimmed = query.trim();
+        const formattedQuery = trimmed.toLowerCase().includes('india') ? trimmed : `${trimmed}, India`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formattedQuery)}&addressdetails=1&limit=6`;
         const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
         const items = await res.json();
 
@@ -192,10 +279,10 @@
 
         suggestionsBox.innerHTML = items.map(item => {
           const addr = item.address || {};
-          const primaryName = addr.city || addr.town || addr.village || addr.municipality || addr.district || addr.county || item.display_name.split(',')[0].trim();
+          const primaryName = item.name || addr.suburb || addr.neighbourhood || addr.city_district || addr.city || addr.town || addr.village || addr.municipality || addr.district || item.display_name.split(',')[0].trim();
           const statePart = addr.state || addr.region || '';
-          const countryPart = addr.country || '';
-          const contextSubtitle = [statePart, countryPart].filter(Boolean).join(', ') || item.display_name;
+          const cityDistrictPart = addr.city || addr.county || addr.state_district || '';
+          const contextSubtitle = [cityDistrictPart, statePart, addr.country].filter(Boolean).join(', ') || item.display_name;
 
           return `
             <div class="suggestion-item" data-lat="${item.lat}" data-lon="${item.lon}" data-name="${primaryName}" data-display="${item.display_name}">
@@ -270,6 +357,10 @@
     }
 
     async fetchCityData(lat, lon, cityName, displayName) {
+      if (typeof lat !== 'number' || typeof lon !== 'number' || isNaN(lat) || isNaN(lon)) {
+        return false;
+      }
+
       this.currentCity = { lat, lon, name: cityName, displayName };
 
       // Format coordinates explicitly for header card
@@ -286,17 +377,19 @@
         // 1. Air Quality API
         const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,dust,uv_index&hourly=pm10,pm2_5,nitrogen_dioxide&timezone=auto`;
         const aqiRes = await fetch(aqiUrl);
+        if (!aqiRes.ok) throw new Error('Air quality API failed');
         const aqiJson = await aqiRes.json();
 
         // 2. Weather Forecast API
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,surface_pressure,wind_speed_10m,weather_code&hourly=temperature_2m,precipitation_probability&timezone=auto`;
         const weatherRes = await fetch(weatherUrl);
+        if (!weatherRes.ok) throw new Error('Weather forecast API failed');
         const weatherJson = await weatherRes.json();
 
         this.liveWeatherData = weatherJson;
 
         const cur = aqiJson.current || {};
-        const pollutants = {
+        const rawPollutants = {
           pm2_5: cur.pm2_5 !== undefined ? cur.pm2_5 : 35,
           pm10: cur.pm10 !== undefined ? cur.pm10 : 65,
           nitrogen_dioxide: cur.nitrogen_dioxide !== undefined ? cur.nitrogen_dioxide : 24,
@@ -305,12 +398,12 @@
           ozone: cur.ozone !== undefined ? cur.ozone : 48
         };
 
-        const cpcbResult = calculateOverallCPCB(pollutants);
+        const cpcbResult = calculateOverallCPCB(rawPollutants);
         this.liveAQIData = cpcbResult;
 
         this.renderAQICard(cpcbResult);
         this.renderWeatherCard(weatherJson);
-        this.renderPollutantsGrid(pollutants, cpcbResult.subIndices);
+        this.renderPollutantsGrid(cpcbResult.normalizedValues || rawPollutants, cpcbResult.subIndices);
         this.renderHistoryChart(aqiJson.hourly);
 
         if (this.scene3D) {
@@ -326,8 +419,13 @@
           this.vayuBot.updateContextIndicator();
         }
 
+        // Bug 3: Cleanly save newly searched/loaded locality to localStorage
+        this.saveLocality({ lat, lon, name: cityName, displayName });
+        return true;
+
       } catch (e) {
         console.error('Failed to load air quality/weather data:', e);
+        return false;
       }
     }
 

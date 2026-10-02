@@ -203,8 +203,15 @@
 
     async checkFavoriteCityAlert(cityName) {
       try {
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
-        const geoData = await geoRes.json();
+        const trimmed = (cityName || '').trim();
+        if (!trimmed) return;
+        const formattedQuery = trimmed.toLowerCase().includes('india') ? trimmed : `${trimmed}, India`;
+        let geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formattedQuery)}&addressdetails=1&limit=1`);
+        let geoData = await geoRes.json();
+        if (!geoData || geoData.length === 0) {
+          geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}&addressdetails=1&limit=1`);
+          geoData = await geoRes.json();
+        }
         if (!geoData || geoData.length === 0) return;
 
         const { lat, lon } = geoData[0];
